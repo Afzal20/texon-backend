@@ -13,9 +13,11 @@ COPY . /app
 
 # Install dependencies
 RUN pip install --upgrade pip
-# Install the project from pyproject.toml (PEP 517/621) and runtime tools.
-RUN pip install .
-RUN pip install gunicorn
+# Install runtime dependencies from requirements.txt instead of building the
+# project package. Building the project fails because the repo uses a
+# flat layout with many top-level Django apps (setuptools package discovery
+# refuses to proceed). Installing from requirements avoids that error.
+RUN pip install -r requirements.txt
 
 # Collect static
 RUN python manage.py collectstatic --noinput
