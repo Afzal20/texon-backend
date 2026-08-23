@@ -16,7 +16,6 @@ from pathlib import Path
 from decouple import Csv, config
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import reverse_lazy
-from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -207,8 +206,8 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'en-us'
 
 LANGUAGES = [
-    ("en", _("English")),
-    ("bn", _("Bengali")),
+    ("en", "English"),
+    ("bn", "Bengali"),
 ]
 
 LOCALE_PATHS = [BASE_DIR / "locale"]
@@ -241,8 +240,8 @@ UNFOLD = {
     "SITE_URL": "/admin/",
     # Site dropdown - switch between multiple admin sites
     "SITE_DROPDOWN": [
-        {"title": _("Backoffice"), "link": reverse_lazy("admin:index")},
-        {"title": _("Operations"), "link": reverse_lazy("operations:index")},
+        {"title": "Backoffice", "link": reverse_lazy("admin:index")},
+        {"title": "Operations", "link": reverse_lazy("operations:index")},
     ],
     # Command palette
     "COMMAND": {
@@ -261,8 +260,8 @@ UNFOLD = {
     },
     "LANGUAGES": {
         "navigation": [
-            {"title": _("English"), "name_local": "English", "link": "/", "code": "en"},
-            {"title": _("Bengali"), "name_local": "বাংলা", "link": "/", "code": "bn"},
+            {"title": "English", "name_local": "English", "link": "/", "code": "en"},
+            {"title": "Bengali", "name_local": "বাংলা", "link": "/", "code": "bn"},
         ],
     },
     "ENVIRONMENT": "development" if DEBUG else "production",
@@ -289,51 +288,51 @@ UNFOLD = {
         "show_all_applications": True,
         "navigation": [
             {
-                "title": _("Operations"),
+                "title": "Operations",
                 "separator": True,
                 "collapsible": True,
                 "items": [
                     {
-                        "title": _("Orders"),
+                        "title": "Orders",
                         "icon": "receipt_long",
                         "link": reverse_lazy("admin:orders_order_changelist"),
                     },
                     {
-                        "title": _("Buyers"),
+                        "title": "Buyers",
                         "icon": "handshake",
                         "link": reverse_lazy("admin:buyers_buyer_changelist"),
                     },
                 ],
             },
             {
-                "title": _("People"),
+                "title": "People",
                 "separator": True,
                 "collapsible": True,
                 "items": [
                     {
-                        "title": _("Users"),
+                        "title": "Users",
                         "icon": "person",
                         "link": reverse_lazy("admin:authentication_user_changelist"),
                     },
                     {
-                        "title": _("Groups"),
+                        "title": "Groups",
                         "icon": "group",
                         "link": reverse_lazy("admin:auth_group_changelist"),
                     },
                 ],
             },
             {
-                "title": _("Pages"),
+                "title": "Pages",
                 "separator": True,
                 "collapsible": True,
                 "items": [
                     {
-                        "title": _("Reports"),
+                        "title": "Reports",
                         "icon": "monitoring",
                         "link": reverse_lazy("admin:reports"),
                     },
                     {
-                        "title": _("Crispy Form Demo"),
+                        "title": "Crispy Form Demo",
                         "icon": "dynamic_form",
                         "link": reverse_lazy("admin:crispy-demo"),
                     },
@@ -347,27 +346,27 @@ UNFOLD = {
             "models": ["orders.order"],
             "items": [
                 {
-                    "title": _("All orders"),
+                    "title": "All orders",
                     "link": reverse_lazy("admin:orders_order_changelist"),
                 },
                 {
-                    "title": _("Pending"),
+                    "title": "Pending",
                     "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=pending"),
                 },
                 {
-                    "title": _("Confirmed"),
+                    "title": "Confirmed",
                     "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=confirmed"),
                 },
                 {
-                    "title": _("In production"),
+                    "title": "In production",
                     "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=in_production"),
                 },
                 {
-                    "title": _("Shipped"),
+                    "title": "Shipped",
                     "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=shipped"),
                 },
                 {
-                    "title": _("Delivered"),
+                    "title": "Delivered",
                     "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=delivered"),
                 },
             ],
@@ -375,9 +374,9 @@ UNFOLD = {
     ],
     "ACCOUNT": {
         "navigation": [
-            {"title": _("Profile"), "link": reverse_lazy("admin:index")},
+            {"title": "Profile", "link": reverse_lazy("admin:index")},
             {
-                "title": _("Logout"),
+                "title": "Logout",
                 "link": reverse_lazy("admin:logout"),
             },
         ],

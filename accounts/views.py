@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.permissions import DjangoModelPermissions, IsAuthenticated
 
-from core.mixins import OwnerQuerysetMixin, RoleBasedQuerysetMixin
+from core.mixins import OwnerQuerysetMixin
 from core.permissions import IsFinanceRole, IsObjectOwnerOrStaff
 from rbac.permissions import ObjectPermission
 
@@ -33,7 +33,7 @@ PERMISSION_CLASSES = [
 ]
 
 
-class RoleBasedChartOfAccountViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin, viewsets.ModelViewSet):
+class ChartOfAccountViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
     queryset = ChartOfAccount.objects.all()
     serializer_class = ChartOfAccountSerializer
     permission_classes = PERMISSION_CLASSES
@@ -42,7 +42,7 @@ class RoleBasedChartOfAccountViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin,
     ordering_fields = ["account_code", "account_name", "created_at"]
 
 
-class RoleBasedJournalEntryViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin, viewsets.ModelViewSet):
+class JournalEntryViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
     queryset = JournalEntry.objects.select_related("account", "currency").all()
     serializer_class = JournalEntrySerializer
     permission_classes = PERMISSION_CLASSES
@@ -51,7 +51,7 @@ class RoleBasedJournalEntryViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin, v
     ordering_fields = ["entry_date", "created_at"]
 
 
-class RoleBasedAccountsPayableViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin, viewsets.ModelViewSet):
+class AccountsPayableViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
     queryset = AccountsPayable.objects.select_related("supplier").all()
     serializer_class = AccountsPayableSerializer
     permission_classes = PERMISSION_CLASSES
@@ -60,7 +60,7 @@ class RoleBasedAccountsPayableViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin
     ordering_fields = ["invoice_date", "due_date", "amount", "balance"]
 
 
-class RoleBasedAccountsReceivableViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin, viewsets.ModelViewSet):
+class AccountsReceivableViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
     queryset = AccountsReceivable.objects.select_related("buyer").all()
     serializer_class = AccountsReceivableSerializer
     permission_classes = PERMISSION_CLASSES
@@ -69,7 +69,7 @@ class RoleBasedAccountsReceivableViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMi
     ordering_fields = ["invoice_date", "due_date", "amount", "balance"]
 
 
-class RoleBasedExpenseViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin, viewsets.ModelViewSet):
+class ExpenseViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
     queryset = Expense.objects.select_related("cost_center", "currency").all()
     serializer_class = ExpenseSerializer
     permission_classes = PERMISSION_CLASSES
@@ -78,7 +78,7 @@ class RoleBasedExpenseViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin, viewse
     ordering_fields = ["expense_date", "amount", "created_at"]
 
 
-class RoleBasedCostCenterViewSet(OwnerQuerysetMixin, RoleBasedQuerysetMixin, viewsets.ModelViewSet):
+class CostCenterViewSet(OwnerQuerysetMixin, viewsets.ModelViewSet):
     queryset = CostCenter.objects.all()
     serializer_class = CostCenterSerializer
     permission_classes = PERMISSION_CLASSES
