@@ -229,5 +229,7 @@ class EndpointEnforcementTests(APITestCase):
         self.assertEqual(self.client.get("/api/v1/users/").status_code, status.HTTP_200_OK)
 
         role.delete()
-        self.client.force_authenticate(user)  # fresh request, no stale cache
+        # Simulate a brand-new request: JWT auth reloads the user from the DB,
+        # so the per-request permission cache on the old instance doesn't apply.
+        self.client.force_authenticate(User.objects.get(pk=user.pk))
         self.assertEqual(self.client.get("/api/v1/users/").status_code, status.HTTP_403_FORBIDDEN)

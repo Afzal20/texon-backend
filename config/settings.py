@@ -15,7 +15,6 @@ from pathlib import Path
 
 from decouple import Csv, config
 from django.core.exceptions import ImproperlyConfigured
-from django.urls import reverse_lazy
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -240,8 +239,8 @@ UNFOLD = {
     "SITE_URL": "/admin/",
     # Site dropdown - switch between multiple admin sites
     "SITE_DROPDOWN": [
-        {"title": "Backoffice", "link": reverse_lazy("admin:index")},
-        {"title": "Operations", "link": reverse_lazy("operations:index")},
+        {"title": "Backoffice", "link": "/admin/"},
+        {"title": "Operations", "link": "/operations/"},
     ],
     # Command palette
     "COMMAND": {
@@ -295,12 +294,12 @@ UNFOLD = {
                     {
                         "title": "Orders",
                         "icon": "receipt_long",
-                        "link": reverse_lazy("admin:orders_order_changelist"),
+                        "link": "/admin/orders/order/",
                     },
                     {
                         "title": "Buyers",
                         "icon": "handshake",
-                        "link": reverse_lazy("admin:buyers_buyer_changelist"),
+                        "link": "/admin/buyers/buyer/",
                     },
                 ],
             },
@@ -312,12 +311,12 @@ UNFOLD = {
                     {
                         "title": "Users",
                         "icon": "person",
-                        "link": reverse_lazy("admin:authentication_user_changelist"),
+                        "link": "/admin/authentication/user/",
                     },
                     {
                         "title": "Groups",
                         "icon": "group",
-                        "link": reverse_lazy("admin:auth_group_changelist"),
+                        "link": "/admin/auth/group/",
                     },
                 ],
             },
@@ -329,12 +328,12 @@ UNFOLD = {
                     {
                         "title": "Reports",
                         "icon": "monitoring",
-                        "link": reverse_lazy("admin:reports"),
+                        "link": "/admin/reports/",
                     },
                     {
                         "title": "Crispy Form Demo",
                         "icon": "dynamic_form",
-                        "link": reverse_lazy("admin:crispy-demo"),
+                        "link": "/admin/crispy-demo/",
                     },
                 ],
             },
@@ -347,37 +346,37 @@ UNFOLD = {
             "items": [
                 {
                     "title": "All orders",
-                    "link": reverse_lazy("admin:orders_order_changelist"),
+                    "link": "/admin/orders/order/",
                 },
                 {
                     "title": "Pending",
-                    "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=pending"),
+                    "link": _changelist_tab("/admin/orders/order/", "?status__exact=pending"),
                 },
                 {
                     "title": "Confirmed",
-                    "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=confirmed"),
+                    "link": _changelist_tab("/admin/orders/order/", "?status__exact=confirmed"),
                 },
                 {
                     "title": "In production",
-                    "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=in_production"),
+                    "link": _changelist_tab("/admin/orders/order/", "?status__exact=in_production"),
                 },
                 {
                     "title": "Shipped",
-                    "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=shipped"),
+                    "link": _changelist_tab("/admin/orders/order/", "?status__exact=shipped"),
                 },
                 {
                     "title": "Delivered",
-                    "link": _changelist_tab(reverse_lazy("admin:orders_order_changelist"), "?status__exact=delivered"),
+                    "link": _changelist_tab("/admin/orders/order/", "?status__exact=delivered"),
                 },
             ],
         },
     ],
     "ACCOUNT": {
         "navigation": [
-            {"title": "Profile", "link": reverse_lazy("admin:index")},
+            {"title": "Profile", "link": "/admin/"},
             {
                 "title": "Logout",
-                "link": reverse_lazy("admin:logout"),
+                "link": "/admin/logout/",
             },
         ],
     },
