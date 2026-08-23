@@ -117,6 +117,7 @@ INSTALLED_APPS += [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -168,6 +169,10 @@ if config("SUPABASE_DB_HOST", default=""):
                 # Supabase uses a connection pooler on port 6543 that requires
                 # disabling prepared statements; harmless on direct connections.
                 'sslmode': config('SUPABASE_DB_SSLMODE', default='require'),
+                # Disable server-side prepared statements when using a
+                # Supavisor/pgbouncer pooler which doesn't support them.
+                # Can be overridden via SUPABASE_DB_OPTIONS in .env
+                'options': config('SUPABASE_DB_OPTIONS', default='-c prepare_threshold=0'),
             },
         }
     }
@@ -392,6 +397,13 @@ UNFOLD = {
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Static files settings for deployment (WhiteNoise)
+# `collectstatic` will place files into `STATIC_ROOT` during build.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+# Use WhiteNoise's compressed manifest storage for cache-friendly assets.
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 ASGI_APPLICATION = "config.asgi.application"
 
