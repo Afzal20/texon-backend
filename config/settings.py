@@ -48,6 +48,28 @@ ALLOWED_HOSTS = config(
     cast=Csv(),
 )
 
+# ---------------------------------------------------------------------------
+# Vercel deployment
+# ---------------------------------------------------------------------------
+# Vercel injects VERCEL=1 into its serverless runtime. When running there we
+# additionally trust the *.vercel.app preview/production domains and the
+# platform's TLS-terminating proxy.
+IS_VERCEL = config("VERCEL", default=False, cast=bool)
+
+if IS_VERCEL:
+    ALLOWED_HOSTS += [".vercel.app"]
+
+if not DEBUG:
+    # Trust the X-Forwarded-Proto header from Vercel's edge proxy so Django
+    # knows requests arrived over HTTPS (required for secure cookies/CSRF).
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Extra origins trusted for POSTing (admin login, OAuth callbacks) when the
+# site is served behind a proxy/domain other than the request host.
+CSRF_TRUSTED_ORIGINS = [
+    origin for origin in config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv()) if origin
+]
+
 
 # Application definition
 
@@ -400,10 +422,20 @@ STATIC_URL = 'static/'
 
 # Static files settings for deployment (WhiteNoise)
 # `collectstatic` will place files into `STATIC_ROOT` during build.
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Lambda's deployment bundle (/var/task) is read-only, so on Vercel we
+# collect static files into the writable /tmp filesystem instead (see
+# api/index.py, which runs collectstatic on first boot).
+STATIC_ROOT = Path('/tmp/staticfiles') if IS_VERCEL else BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 # Use WhiteNoise's compressed manifest storage for cache-friendly assets.
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# NOTE: the manifest variant raises at boot if `collectstatic` hasn't run.
+# On ephemeral serverless platforms (Vercel) we therefore use the non-manifest
+# variant so a missing manifest never breaks cold starts.
+STATICFILES_STORAGE = (
+    'whitenoise.storage.CompressedStaticFilesStorage'
+    if IS_VERCEL
+    else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+)
 
 ASGI_APPLICATION = "config.asgi.application"
 
