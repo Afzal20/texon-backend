@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from datetime import timedelta
 from pathlib import Path
+import warnings
 
 from decouple import Csv, config
 from django.core.exceptions import ImproperlyConfigured
@@ -149,6 +150,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'django.middleware.csp.ContentSecurityPolicyMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -215,7 +217,9 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
+        # OWASP A07: require a 12+ character passphrase (was Django's default 8).
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 12},
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -584,6 +588,11 @@ REST_AUTH = {
     'USE_JWT': True,
     'JWT_AUTH_COOKIE': 'jwt-auth',
     'JWT_AUTH_REFRESH_COOKIE': 'jwt-refresh-token',
+    # OWASP A02/A05: JWT cookies are HttpOnly, Secure (when not DEBUG) and
+    # SameSite=Lax so they are never readable by JS and never sent cross-site.
+    'JWT_AUTH_SECURE': not DEBUG,
+    'JWT_AUTH_HTTPONLY': True,
+    'JWT_AUTH_SAMESITE': 'Lax',
     'TOKEN_MODEL': None,
     'USER_DETAILS_SERIALIZER': 'authentication.serializers.UserDetailsSerializer',
 }
@@ -617,3 +626,110 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
     }
 }
+
+
+# ---------------------------------------------------------------------------
+# OWASP Top 10 hardening
+# ---------------------------------------------------------------------------
+# Transport security & browser hardening headers (A02, A05).
+# Active only when DEBUG=False so local HTTP development keeps working.
+# Individual flags can be overridden via environment variables.
+if not DEBUG:
+    SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
+    SECURE_HSTS_SECONDS = config("SECURE_HSTS_SECONDS", default=31536000, cast=int)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+X_FRAME_OPTIONS = "DENY"
+
+# Cookie hardening (A02/A07): sessions and CSRF cookies are HttpOnly,
+# SameSite=Lax, and Secure in production.
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Keep CSRF cookie readable by JS only if a SPA needs the X-CSRFToken
+    # header; JWT APIs typically don't. Flip to True via env if required.
+    if config("CSRF_COOKIE_HTTPONLY", default=True, cast=bool):
+        CSRF_COOKIE_HTTPONLY = True
+
+# Content Security Policy (A03/A05) - Django 6 native support.
+# Deployed in REPORT-ONLY mode first so any violation is logged by the browser
+# without breaking the Unfold admin; flip to SECURE_CSP once no violations are
+# reported (env: CSP_ENFORCE=1).
+_CSP_DIRECTIVES = {
+    "default-src": ("'self'",),
+    # Unfold admin templates rely on inline style/script attributes.
+    "script-src": ("'self'", "'unsafe-inline'"),
+    "style-src": ("'self'", "'unsafe-inline'"),
+    "img-src": ("'self'", "data:", "https:"),
+    "font-src": ("'self'",),
+    "connect-src": ("'self'",),
+    "frame-ancestors": ("'none'",),
+    "base-uri": ("'self'",),
+    "form-action": ("'self'",),
+    "object-src": ("'none'",),
+}
+if not DEBUG and config("CSP_ENFORCE", default=False, cast=bool):
+    SECURE_CSP = _CSP_DIRECTIVES
+else:
+    SECURE_CSP_REPORT_ONLY = _CSP_DIRECTIVES
+
+# Security logging & monitoring (A09). Auth lifecycle events are emitted by
+# core/security_logging.py signal receivers into the "texon.security" logger;
+# django.request captures 4xx/5xx, django.security catches suspicious ops.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.security": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "texon.security": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
+# Fail loudly on insecure production configuration (A05). Registered as a
+# Django system check in core/apps.py - visible via `manage.py check` and at
+# boot on Vercel.
+if not DEBUG and "*" in ALLOWED_HOSTS:
+    warnings.warn(
+        "ALLOWED_HOSTS contains '*': host-header spoofing and cache poisoning "
+        "become possible. List your real domains instead.",
+        stacklevel=0,
+    )
+if not DEBUG and CORS_ALLOW_ALL_ORIGINS:
+    warnings.warn(
+        "CORS_ALLOW_ALL_ORIGINS=True with credentials enabled lets any site "
+        "make authenticated cross-origin calls. Set explicit origins in "
+        "CORS_ALLOWED_ORIGINS.",
+        stacklevel=0,
+    )
