@@ -25,7 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config("DJANGO_DEBUG", default=True, cast=bool)
+# Secure by default: DEBUG pages disclose the full URL map and settings.
+# Local dev must opt in via DJANGO_DEBUG=True in backend/.env.
+DEBUG = config("DJANGO_DEBUG", default=False, cast=bool)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # A hardcoded insecure fallback is only acceptable while DEBUG=True; in
@@ -520,6 +522,15 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=False, cast=bool)
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:3000,http://127.0.0.1:3000", cast=Csv())
 CORS_ALLOW_CREDENTIALS = True
+
+# Guardrail (OWASP A05): reflecting any Origin together with credentials lets
+# malicious sites read authenticated responses from a victim's browser.
+if CORS_ALLOW_ALL_ORIGINS and not DEBUG:
+    raise ImproperlyConfigured(
+        "CORS_ALLOW_ALL_ORIGINS=True combined with CORS_ALLOW_CREDENTIALS=True "
+        "is an exploitable configuration and is refused while DEBUG=False. "
+        "Remove the env var and whitelist origins in CORS_ALLOWED_ORIGINS instead."
+    )
 CORS_ALLOW_METHODS = [
     "DELETE",
     "GET",
@@ -601,6 +612,7 @@ REST_AUTH = {
     'JWT_AUTH_SAMESITE': 'Lax',
     'TOKEN_MODEL': None,
     'USER_DETAILS_SERIALIZER': 'authentication.serializers.UserDetailsSerializer',
+    'REGISTER_SERIALIZER': 'authentication.serializers.RegisterSerializer',
 }
 
 # Allowlisted redirect targets for OAuth callback_url overrides. The frontend

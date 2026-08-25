@@ -36,3 +36,4 @@ htmlcov/
 # Local runtime files
 celerybeat-schedule
 *.pid
+.env*

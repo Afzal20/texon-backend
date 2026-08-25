@@ -33,7 +33,7 @@ from .serializers import (
 class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_perms("roles.manage")]
     filterset_fields = ["group"]
     search_fields = ["codename", "label"]
     ordering_fields = ["codename", "group"]
@@ -48,9 +48,9 @@ class RoleViewSet(viewsets.ModelViewSet):
     ordering_fields = ["name"]
 
     def get_permissions(self):
-        if self.action in ("create", "update", "partial_update", "destroy"):
-            return [IsAuthenticated(), require_perms("roles.manage")()]
-        return super().get_permissions()
+        # The full role catalog (incl. permission codenames) is sensitive:
+        # every action requires roles.manage — not just writes.
+        return [IsAuthenticated(), require_perms("roles.manage")()]
 
     def perform_destroy(self, instance):
         if instance.is_system:
