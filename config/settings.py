@@ -702,21 +702,29 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
+        # Ring buffer consumed by the admin panel "Logs" page
+        # (core/admin_pages.py LogsPage). Mirrors everything that goes to the
+        # console so staff can inspect recent logs without platform access.
+        "memory": {
+            "class": "core.log_buffer.MemoryLogHandler",
+            "capacity": 2000,
+            "level": "DEBUG",
+        },
     },
-    "root": {"handlers": ["console"], "level": "WARNING"},
+    "root": {"handlers": ["console", "memory"], "level": "WARNING"},
     "loggers": {
         "django.request": {
-            "handlers": ["console"],
+            "handlers": ["console", "memory"],
             "level": "WARNING",
             "propagate": False,
         },
         "django.security": {
-            "handlers": ["console"],
+            "handlers": ["console", "memory"],
             "level": "WARNING",
             "propagate": False,
         },
         "texon.security": {
-            "handlers": ["console"],
+            "handlers": ["console", "memory"],
             "level": "INFO",
             "propagate": False,
         },
