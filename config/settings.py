@@ -114,6 +114,7 @@ INSTALLED_APPS = [
     'planning',
     'scheduling',
     'rbac',
+    'ai',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
@@ -543,8 +544,13 @@ EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@texon.com")
 
-AI_LLM_PROVIDER = config("AI_LLM_PROVIDER", default="lm_studio")
+AI_LLM_PROVIDER = config("AI_LLM_PROVIDER", default="openrouter")
 AI_LLM_CONFIG = {
+    "openrouter": {
+        "base_url": config("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1"),
+        "model": config("OPENROUTER_MODEL", default="openai/gpt-4o-mini"),
+        "api_key": config("OPEN_ROUTER_API_KEY", default="") or config("OPENROUTER_API_KEY", default=""),
+    },
     "lm_studio": {
         "base_url": config("LM_STUDIO_BASE_URL", default="http://localhost:1234/v1"),
         "model": config("LM_STUDIO_MODEL", default="local-model"),

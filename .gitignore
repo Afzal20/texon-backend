@@ -23,3 +23,16 @@ media/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+
+# uv / Python version pinning
+.python-version
+
+# IDEs
+.idea/
+.vscode/
+
+# Local runtime files
+celerybeat-schedule
+*.pid
