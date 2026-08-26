@@ -35,11 +35,37 @@ class RegisterSerializer(DjRestAuthRegisterSerializer):
     """
 
     username = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    first_name = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    last_name = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    phone = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
+    def validate_username(self, username):
+        # The user model has no username field, so skip the adapter's
+        # clean_username which tries to query by a nonexistent field.
+        return ""
 
     def validate(self, attrs):
-        # Drop the placeholder so nothing downstream tries to store it.
+        # Drop fields not part of allauth's signup flow.
         attrs.pop("username", None)
+        self._first_name = attrs.pop("first_name", "")
+        self._last_name = attrs.pop("last_name", "")
+        self._phone = attrs.pop("phone", "")
         return super().validate(attrs)
+
+    def get_cleaned_data(self):
+        data = super().get_cleaned_data()
+        data["first_name"] = self._first_name
+        data["last_name"] = self._last_name
+        data["phone"] = self._phone
+        return data
+
+    def save(self, request):
+        user = super().save(request)
+        phone = getattr(self, "_phone", "")
+        if phone:
+            user.phone = phone
+            user.save(update_fields=["phone"])
+        return user
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
