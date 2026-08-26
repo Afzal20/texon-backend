@@ -559,7 +559,7 @@ AI_LLM_PROVIDER = config("AI_LLM_PROVIDER", default="openrouter")
 AI_LLM_CONFIG = {
     "openrouter": {
         "base_url": config("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1"),
-        "model": config("OPENROUTER_MODEL", default="deepseek/deepseek-chat:free"),
+        "model": config("OPENROUTER_MODEL", default="deepseek/deepseek-chat"),
         "api_key": config("OPEN_ROUTER_API_KEY", default="") or config("OPENROUTER_API_KEY", default=""),
     },
     "lm_studio": {
