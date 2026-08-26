@@ -1,12 +1,10 @@
-import asyncio
-
 from django.db.models import Max
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .llm import MAX_HISTORY_MESSAGES, stream_completion, title_from_message
+from .llm import MAX_HISTORY_MESSAGES, stream_completion_sync, title_from_message
 from .models import Conversation, Message
 from .serializers import ConversationDetailSerializer, ConversationSerializer
 
@@ -77,13 +75,7 @@ class ChatView(APIView):
         history = list(reversed(history))
 
         try:
-            loop = asyncio.new_event_loop()
-            reply_parts = []
-            async def _collect():
-                async for chunk in stream_completion(history):
-                    reply_parts.append(chunk)
-            loop.run_until_complete(_collect())
-            loop.close()
+            reply_parts = list(stream_completion_sync(history))
             content = "".join(reply_parts)
         except Exception:
             return Response(

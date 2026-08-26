@@ -7,7 +7,7 @@ chat-completions API, so a single ``AsyncOpenAI`` client covers all of them.
 import logging
 
 from django.conf import settings
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, OpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +52,13 @@ def build_client(cfg):
     return AsyncOpenAI(**kwargs)
 
 
+def build_sync_client(cfg):
+    kwargs = {"base_url": cfg["base_url"], "api_key": cfg["api_key"]}
+    if cfg.get("default_headers"):
+        kwargs["default_headers"] = cfg["default_headers"]
+    return OpenAI(**kwargs)
+
+
 async def stream_completion(history):
     """Yield assistant text chunks for ``history``.
 
@@ -89,3 +96,34 @@ def title_from_message(text):
     """Derive a short conversation title from the first user message."""
     text = " ".join((text or "").split())
     return (text[:60] + "…") if len(text) > 60 else (text or "New chat")
+
+
+def stream_completion_sync(history):
+    """Synchronous version of stream_completion for use in DRF views.
+
+    ``history`` is a list of {"role", "content"} dicts. Yields text chunks.
+    """
+    cfg = get_provider_config()
+    if not cfg.get("api_key"):
+        raise RuntimeError(
+            "AI provider API key is not configured "
+            f"(provider={settings.AI_LLM_PROVIDER})."
+        )
+
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages += history[-MAX_HISTORY_MESSAGES:]
+
+    client = build_sync_client(cfg)
+    stream = client.chat.completions.create(
+        model=cfg["model"],
+        messages=messages,
+        temperature=cfg.get("temperature", 0.2),
+        max_tokens=cfg.get("max_tokens", 2048),
+        stream=True,
+    )
+    for event in stream:
+        if event.choices:
+            delta = event.choices[0].delta
+            content = getattr(delta, "content", None)
+            if content:
+                yield content
