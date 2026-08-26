@@ -1,8 +1,13 @@
-from django.db.models import Max
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+import asyncio
 
-from .models import Conversation
+from django.db.models import Max
+from rest_framework import status, viewsets
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .llm import MAX_HISTORY_MESSAGES, stream_completion, title_from_message
+from .models import Conversation, Message
 from .serializers import ConversationDetailSerializer, ConversationSerializer
 
 
@@ -32,3 +37,67 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+class ChatView(APIView):
+    """Non-streaming HTTP chat endpoint (used as WebSocket fallback on Vercel)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        text = (request.data.get("message") or "").strip()
+        if not text:
+            return Response({"detail": "Empty message."}, status=status.HTTP_400_BAD_REQUEST)
+        if len(text) > 8000:
+            return Response({"detail": "Message too long."}, status=status.HTTP_400_BAD_REQUEST)
+
+        conversation_id = request.data.get("conversation_id")
+        try:
+            if conversation_id:
+                conversation = Conversation.objects.get(id=conversation_id, user=request.user)
+            else:
+                conversation = Conversation.objects.create(user=request.user)
+        except Conversation.DoesNotExist:
+            return Response({"detail": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Save user message
+        is_first = not conversation.messages.exists()
+        user_message = Message.objects.create(conversation=conversation, role="user", content=text)
+        if is_first:
+            conversation.title = title_from_message(text)
+            conversation.save(update_fields=["title", "updated_at"])
+        else:
+            conversation.save(update_fields=["updated_at"])
+
+        # Build history and stream LLM response
+        history = list(
+            conversation.messages.order_by("-id")
+            .values("role", "content")[:MAX_HISTORY_MESSAGES]
+        )
+        history = list(reversed(history))
+
+        try:
+            loop = asyncio.new_event_loop()
+            reply_parts = []
+            async def _collect():
+                async for chunk in stream_completion(history):
+                    reply_parts.append(chunk)
+            loop.run_until_complete(_collect())
+            loop.close()
+            content = "".join(reply_parts)
+        except Exception:
+            return Response(
+                {"detail": "The AI service is unavailable right now. Please try again."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        assistant_message = Message.objects.create(
+            conversation=conversation, role="assistant", content=content
+        )
+        conversation.save(update_fields=["updated_at"])
+
+        return Response({
+            "id": str(assistant_message.id),
+            "response": content,
+            "conversation_id": conversation.id,
+        })
