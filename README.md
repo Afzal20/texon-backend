@@ -106,7 +106,11 @@ See [`DEPLOY.md`](DEPLOY.md) for full Vercel deployment instructions and
 
 ## Deployment (Vercel)
 
-The backend is deployed on Vercel as a Python serverless function:
+This application was copied out of the original monorepo
+[github.com/Afzal20/texon](https://github.com/Afzal20/texon) into its own
+separate Git repository (together with the frontend as a second repository)
+so that the two can be deployed to Vercel independently. The backend is
+deployed on Vercel as a Python serverless function:
 `vercel.json` routes all traffic to `api/index.py` (the Django WSGI app),
 and `config/settings.py` auto-detects `VERCEL=1`. Migrations are **not**
 applied automatically — run `uv run manage.py migrate` locally against the
